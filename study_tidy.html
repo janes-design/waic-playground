@@ -1,0 +1,433 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1366,initial-scale=1">
+<title>WAIC Demo · 整理书桌</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+:root {
+  --cream: #F8F3EA;
+  --cream-deep: #EFE6D4;
+  --paper: #FFFFFF;
+  --ink: #1F1B16;
+  --ink-soft: #6F6557;
+  --ink-faint: #ADA395;
+  --sudo-navy: #1E3A5F;
+  --terracotta: #C76E4A;
+  --terracotta-deep: #A85432;
+  --sage: #94A88F;
+  --mustard: #DBA84A;
+  --green-soft: #B6CBA8;
+  --shadow: 0 1px 2px rgba(31,27,22,.04), 0 8px 24px rgba(31,27,22,.06);
+}
+* { box-sizing: border-box; margin: 0; padding: 0; -webkit-font-smoothing: antialiased; }
+body {
+  font-family: 'Plus Jakarta Sans', 'PingFang SC', -apple-system, sans-serif;
+  background: #2B2925; color: var(--ink);
+  min-height: 100vh; display: flex; flex-direction: column;
+  align-items: center; justify-content: center; padding: 32px; gap: 22px;
+}
+
+/* scene switcher */
+.scene-switcher { display: flex; gap: 4px; background: rgba(255,255,255,.05); padding: 5px; border-radius: 999px; border: 1px solid rgba(255,255,255,.06); }
+.scene-switcher a, .scene-switcher button {
+  padding: 9px 16px; font-size: 12px; font-weight: 500;
+  color: rgba(255,255,255,.5); background: transparent; border: none;
+  border-radius: 999px; cursor: pointer; font-family: inherit;
+  letter-spacing: .02em; transition: all .2s; white-space: nowrap; text-decoration: none;
+}
+.scene-switcher a:hover { color: rgba(255,255,255,.9); }
+.scene-switcher a.active { background: rgba(255,255,255,.96); color: var(--ink); }
+.scene-switcher button:disabled { color: rgba(255,255,255,.22); cursor: not-allowed; }
+
+/* iPad */
+.ipad { width: 1180px; height: 820px; background: #0E0D0C; border-radius: 38px; padding: 10px; box-shadow: 0 40px 100px rgba(0,0,0,.5), 0 0 0 1px rgba(255,255,255,.04) inset; position: relative; }
+.ipad::before { content:''; position:absolute; left:50%; top:18px; transform:translateX(-50%); width: 60px; height: 4px; border-radius: 2px; background: rgba(255,255,255,.08); }
+.screen { width: 100%; height: 100%; background: var(--cream); border-radius: 28px; overflow: hidden; position: relative; }
+.state { display: none; height: 100%; width: 100%; }
+.state.active { display: flex; }
+
+/* brand */
+.topbar { position: absolute; top: 0; left: 0; right: 0; height: 60px; padding: 0 28px; display: flex; align-items: center; justify-content: space-between; z-index: 10; pointer-events: none; }
+.topbar.on-photo { background: linear-gradient(180deg, rgba(255,255,255,.85) 0%, rgba(255,255,255,0) 100%); }
+.brand { display: flex; align-items: center; gap: 12px; }
+.brand img.logo { height: 22px; display: block; }
+.brand .sep { color: var(--ink-faint); opacity: .5; }
+.brand .scene { font-weight: 500; color: var(--ink-soft); font-size: 13px; }
+.statuspill { display: inline-flex; align-items: center; gap: 8px; padding: 8px 14px; background: rgba(255,255,255,.75); backdrop-filter: blur(20px); -webkit-backdrop-filter: blur(20px); border-radius: 999px; font-size: 12px; color: var(--ink-soft); border: 1px solid rgba(31,27,22,.06); }
+.statuspill .ready { width: 6px; height: 6px; border-radius: 50%; background: #4FAE5C; box-shadow: 0 0 0 3px rgba(79,174,92,.18); }
+
+/* desk + props */
+.desk { position: relative; background: #d9c3a3 url('assets/robot-bg.jpg') center/cover no-repeat; overflow: hidden; }
+.desk-toys { position: absolute; inset: 0; z-index: 2; }
+.dt { position: absolute; filter: drop-shadow(0 8px 10px rgba(40,24,8,.32)); transform: translate(-50%, -50%); transition: opacity .3s; user-select: none; pointer-events: none; }
+.dt.faded { opacity: .34; filter: drop-shadow(0 4px 6px rgba(40,24,8,.2)) grayscale(.2); }
+
+/* file with label tag */
+.prop { position: absolute; transform: translate(-50%,-50%) rotate(var(--rot,0deg)); z-index: 2; }
+.prop img { display:block; filter: drop-shadow(0 8px 10px rgba(40,24,8,.32)); }
+.prop .ftag {
+  position: absolute; left: 50%; top: 60%; transform: translate(-50%,-50%);
+  background: var(--tag, var(--terracotta)); color: #fff;
+  font-size: 10px; font-weight: 700; letter-spacing: .04em;
+  padding: 3px 9px; border-radius: 3px; white-space: nowrap;
+  box-shadow: 0 1px 3px rgba(0,0,0,.25);
+}
+.prop.faded img { opacity: .34; filter: drop-shadow(0 4px 6px rgba(40,24,8,.2)) grayscale(.2); }
+.prop.faded .ftag { opacity: .34; }
+
+.counted { position: absolute; top: 76px; left: 28px; background: rgba(31,27,22,.82); color: rgba(255,255,255,.95); padding: 10px 16px; border-radius: 12px; font-size: 12px; font-weight: 500; backdrop-filter: blur(20px); display: flex; align-items: center; gap: 10px; z-index: 5; }
+.counted .num { color: var(--mustard); font-weight: 700; }
+
+/* detection box */
+.detect { position: absolute; border: 2px solid var(--terracotta); border-radius: 6px; z-index: 6; box-shadow: 0 0 0 4px rgba(199,110,74,.15); transform: translate(-50%, -50%); }
+.detect-label { position: absolute; top: -26px; left: -2px; background: var(--terracotta); color: white; font-size: 10px; font-weight: 600; padding: 4px 8px; border-radius: 4px; white-space: nowrap; letter-spacing: .03em; }
+.detect-arrow { position:absolute; right:-30px; top:50%; transform:translateY(-50%); font-size:20px; color:var(--terracotta); font-weight:700; }
+
+/* ═══════════ ENTRY ═══════════ */
+#state-entry .scene-side { flex: 1.32; }
+#state-entry .panel-side { flex: 1; background: var(--paper); padding: 76px 56px 40px; display: flex; flex-direction: column; }
+.eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; color: var(--terracotta); margin-bottom: 18px; }
+.hero-title { font-family: 'DM Serif Display', 'PingFang SC', serif; font-size: 44px; line-height: 1.1; color: var(--ink); letter-spacing: -.01em; margin-bottom: 12px; }
+.hero-sub { font-size: 14px; color: var(--ink-soft); line-height: 1.55; margin-bottom: 34px; }
+.options { display: flex; flex-direction: column; gap: 10px; }
+.opt { display: flex; align-items: center; gap: 18px; padding: 18px 20px; background: var(--cream); border: 1px solid transparent; border-radius: 16px; cursor: pointer; transition: all .2s; }
+.opt:hover { background: var(--cream-deep); border-color: rgba(199,110,74,.2); transform: translateY(-1px); }
+.opt.featured { background: var(--ink); color: var(--cream); }
+.opt.featured:hover { background: #000; }
+.opt.featured .opt-name { color: var(--paper); }
+.opt.featured .opt-desc { color: rgba(255,255,255,.6); }
+.opt.featured .opt-icon { background: rgba(255,255,255,.1); border-color: rgba(255,255,255,.05); }
+.opt.featured .arrow svg { stroke: var(--cream); }
+.opt-icon { width: 44px; height: 44px; background: var(--paper); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; flex-shrink: 0; border: 1px solid rgba(31,27,22,.06); }
+.opt-body { flex: 1; }
+.opt-name { font-size: 15px; font-weight: 600; color: var(--ink); letter-spacing: -.01em; }
+.opt-desc { font-size: 12px; color: var(--ink-soft); margin-top: 2px; line-height: 1.4; }
+.arrow { width: 20px; height: 20px; display: flex; align-items: center; justify-content: center; }
+.capability-note { margin-top: auto; padding-top: 26px; border-top: 1px solid rgba(31,27,22,.08); display: flex; align-items: center; gap: 14px; }
+.cap-badge { width: 40px; height: 40px; border-radius: 12px; background: linear-gradient(135deg, var(--terracotta), var(--terracotta-deep)); color: #fff; display: flex; align-items: center; justify-content: center; font-size: 18px; flex-shrink: 0; box-shadow: 0 4px 12px rgba(199,110,74,.25); }
+.cap-text strong { display: block; font-size: 13px; font-weight: 600; color: var(--ink); }
+.cap-text span { font-size: 12px; color: var(--ink-soft); margin-top: 1px; }
+
+/* ═══════════ WATCHING ═══════════ */
+#state-watching .cam-side { flex: 1.4; cursor: pointer; }
+.viewfinder { position: absolute; top: 76px; left: 24px; right: 24px; bottom: 24px; pointer-events: none; z-index: 3; }
+.viewfinder::before, .viewfinder::after, .viewfinder > span:nth-child(1), .viewfinder > span:nth-child(2) { content:''; position: absolute; width: 26px; height: 26px; border: 2px solid rgba(255,255,255,.7); }
+.viewfinder::before { top:0; left:0; border-right: none; border-bottom: none; }
+.viewfinder::after { top:0; right:0; border-left: none; border-bottom: none; }
+.viewfinder > span:nth-child(1) { bottom:0; left:0; border-right: none; border-top: none; }
+.viewfinder > span:nth-child(2) { bottom:0; right:0; border-left: none; border-top: none; }
+#state-watching .plan-side { flex: 1; background: var(--paper); padding: 76px 44px 36px; display: flex; flex-direction: column; }
+.task-tag { display: inline-flex; align-items: center; gap: 8px; padding: 6px 12px; background: var(--cream); border-radius: 999px; font-size: 11px; font-weight: 600; color: var(--ink-soft); align-self: flex-start; margin-bottom: 18px; letter-spacing: .03em; }
+.task-tag .tag-dot { width: 6px; height: 6px; border-radius: 50%; background: var(--terracotta); }
+.task-title { font-family: 'DM Serif Display', serif; font-size: 34px; line-height: 1.15; color: var(--ink); margin-bottom: 8px; }
+.task-now { font-size: 13px; color: var(--ink-soft); margin-bottom: 28px; }
+.progress-row { display: flex; align-items: center; gap: 12px; margin-bottom: 32px; }
+.prog-bar { flex: 1; height: 6px; background: var(--cream-deep); border-radius: 999px; overflow: hidden; }
+.prog-fill { width: 60%; height: 100%; background: linear-gradient(90deg, var(--terracotta), var(--mustard)); border-radius: 999px; }
+.prog-num { font-size: 12px; font-weight: 600; color: var(--ink); font-variant-numeric: tabular-nums; }
+.plan-list-title { font-size: 11px; font-weight: 700; color: var(--ink-faint); letter-spacing: .14em; text-transform: uppercase; margin-bottom: 14px; }
+.plan-list { display: flex; flex-direction: column; gap: 4px; }
+.plan-step { display: flex; align-items: center; gap: 14px; padding: 12px 14px; border-radius: 12px; font-size: 13px; }
+.plan-step.done { color: var(--ink-faint); }
+.plan-step.done .step-dot { background: var(--green-soft); }
+.plan-step.done .step-dot::after { content:'✓'; color: white; font-size: 10px; font-weight: 700; }
+.plan-step.active { background: var(--cream); color: var(--ink); font-weight: 500; }
+.plan-step.active .step-dot { background: var(--terracotta); box-shadow: 0 0 0 4px rgba(199,110,74,.18); animation: pulse 1.6s ease-in-out infinite; }
+.plan-step.pending { color: var(--ink-faint); }
+.plan-step.pending .step-dot { background: var(--cream-deep); }
+.step-dot { width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.step-cat { flex: 1; }
+.step-hint { font-size: 11px; color: var(--terracotta); font-weight: 600; }
+.step-count { font-size: 11px; color: var(--ink-faint); font-variant-numeric: tabular-nums; }
+.plan-step.active .step-count { color: var(--ink-soft); }
+@keyframes pulse { 0%,100% { box-shadow: 0 0 0 4px rgba(199,110,74,.18); } 50% { box-shadow: 0 0 0 8px rgba(199,110,74,.08); } }
+.now-doing { margin-top: auto; padding: 16px; background: var(--cream); border-radius: 12px; display: flex; align-items: center; gap: 12px; }
+.now-doing .robot { width: 32px; height: 32px; border-radius: 8px; background: var(--ink); display: flex; align-items: center; justify-content: center; color: var(--mustard); font-size: 14px; flex-shrink: 0; }
+.now-doing .lbl { font-size: 11px; color: var(--ink-faint); letter-spacing: .03em; text-transform: uppercase; font-weight: 600; }
+.now-doing .what { font-size: 13px; color: var(--ink); font-weight: 500; margin-top: 1px; }
+.click-hint { position: absolute; bottom: 20px; right: 20px; font-size: 10px; color: var(--ink-soft); background: rgba(255,255,255,.9); padding: 6px 12px; border-radius: 999px; letter-spacing: .04em; border: 1px dashed rgba(31,27,22,.18); z-index: 20; pointer-events: none; display: flex; align-items: center; gap: 6px; }
+
+/* ═══════════ COMPLETION ═══════════ */
+#state-done { background: var(--cream); padding: 76px 70px 40px; flex-direction: column; align-items: stretch; }
+.done-eyebrow { font-size: 11px; font-weight: 700; color: #4FAE5C; letter-spacing: .18em; text-transform: uppercase; margin-bottom: 8px; display: flex; align-items: center; gap: 8px; }
+.done-title { font-family: 'DM Serif Display', serif; font-size: 56px; color: var(--ink); letter-spacing: -.02em; line-height: 1; margin-bottom: 8px; }
+.done-sub { font-size: 14px; color: var(--ink-soft); margin-bottom: 32px; }
+
+/* the satisfying "after" shelf lineup */
+.shelf {
+  background: linear-gradient(180deg, #EAD9BD 0%, #DEC8A4 100%);
+  border-radius: 18px;
+  padding: 40px 40px 0;
+  height: 300px;
+  display: flex; align-items: flex-end; justify-content: center; gap: 26px;
+  position: relative; overflow: hidden;
+  box-shadow: inset 0 -10px 20px rgba(120,80,40,.12), var(--shadow);
+  margin-bottom: 24px;
+}
+.shelf::after { content:''; position:absolute; left:0; right:0; bottom:0; height:18px; background: linear-gradient(180deg, rgba(120,80,40,.18), rgba(120,80,40,.28)); }
+.shelf-item { position: relative; display: flex; flex-direction: column; align-items: center; z-index: 2; }
+.shelf-item img { display:block; filter: drop-shadow(0 10px 12px rgba(60,36,12,.3)); }
+.shelf-item .ftag { position: absolute; left: 50%; top: 56%; transform: translateX(-50%); background: var(--tag,var(--terracotta)); color:#fff; font-size: 11px; font-weight: 700; letter-spacing:.04em; padding: 4px 12px; border-radius: 4px; box-shadow: 0 1px 3px rgba(0,0,0,.25); }
+.aligned-badge { position: absolute; top: 18px; right: 22px; background: rgba(255,255,255,.92); color: var(--ink); font-size: 12px; font-weight: 600; padding: 8px 14px; border-radius: 999px; display: flex; align-items: center; gap: 8px; box-shadow: var(--shadow); z-index: 5; }
+.aligned-badge .ck { color: #4FAE5C; font-weight: 800; }
+
+.done-stats { display: flex; gap: 40px; margin-bottom: 26px; padding: 0 4px; }
+.dstat .dval { font-family: 'DM Serif Display', serif; font-size: 30px; color: var(--ink); line-height: 1; font-variant-numeric: tabular-nums; }
+.dstat .dlbl { font-size: 11px; color: var(--ink-faint); font-weight: 600; letter-spacing: .04em; margin-top: 6px; }
+.done-cta { display: flex; gap: 12px; margin-top: auto; }
+.btn { padding: 14px 24px; border-radius: 999px; font-size: 13px; font-weight: 600; letter-spacing: .02em; border: none; cursor: pointer; font-family: inherit; display: inline-flex; align-items: center; gap: 8px; transition: transform .15s; }
+.btn:hover { transform: translateY(-1px); }
+.btn-primary { background: var(--ink); color: white; flex: 1; justify-content: center; }
+.btn-secondary { background: var(--paper); color: var(--ink); border: 1px solid rgba(31,27,22,.1); }
+
+.footer-label { color: rgba(255,255,255,.45); font-size: 11px; letter-spacing: .04em; display: flex; align-items: center; gap: 8px; }
+.footer-label kbd { background: rgba(255,255,255,.1); color: rgba(255,255,255,.7); padding: 2px 8px; border-radius: 4px; font-size: 10px; font-family: inherit; border: 1px solid rgba(255,255,255,.1); }
+</style>
+</head>
+<body>
+
+<div class="scene-switcher">
+  <a class="active" href="study_tidy.html">书房 · 整理书桌</a>
+  <a href="dining_table.html">餐厅 · 餐具摆台</a>
+  <a href="kitchen_trash.html">厨房 · 垃圾分类</a>
+  <a href="toy_sorting.html">儿童房 · 玩具收纳</a>
+  <a href="lego_sorting.html">儿童房 · 乐高分拣</a>
+</div>
+
+<div class="ipad">
+  <div class="screen">
+
+    <!-- ═══════════ STATE 1: ENTRY ═══════════ -->
+    <div class="state active" id="state-entry">
+      <div class="topbar on-photo" style="right:auto; width:56%;">
+        <div class="brand">
+          <img class="logo" src="assets/sudo-logo.png" alt="sudo">
+          <span class="sep">·</span>
+          <span class="scene">书房</span>
+        </div>
+      </div>
+      <div class="topbar" style="left:auto; width:44%;">
+        <div></div>
+        <div class="statuspill"><span class="ready"></span> 机器人就绪</div>
+      </div>
+
+      <div class="scene-side desk">
+        <div class="counted"><span>📷</span> 桌面识别到 <span class="num">6</span> 件物品</div>
+        <div class="desk-toys">
+          <!-- messy desk: files tilted, labels facing random ways, books toppled -->
+          <img class="dt" src="assets/books2.png" style="left:16%; top:84%; width:158px; transform:translate(-50%,-50%) rotate(-5deg);">
+          <img class="dt" src="assets/books.png"  style="left:76%; top:85%; width:150px; transform:translate(-50%,-50%) rotate(6deg);">
+          <img class="dt" src="assets/mug.png"    style="left:50%; top:84%; width:82px;">
+          <div class="prop" style="left:25%; top:65%; --rot:16deg; --tag:#C76E4A;">
+            <img src="assets/file1.png" style="width:74px;">
+            <span class="ftag">项目 A</span>
+          </div>
+          <div class="prop" style="left:69%; top:63%; --rot:-13deg; --tag:#94A88F;">
+            <img src="assets/file2.png" style="width:74px;">
+            <span class="ftag">财务</span>
+          </div>
+          <div class="prop" style="left:40%; top:70%; --rot:-22deg; --tag:#9DBED1;">
+            <img src="assets/file1.png" style="width:70px;">
+            <span class="ftag">合同</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel-side">
+        <div class="eyebrow">书房 · 任务 01</div>
+        <h1 class="hero-title">桌面有点乱，<br/>交给我吧</h1>
+        <p class="hero-sub">告诉机器人你想要的效果，它会把文件和书本归位 —— 还能把每个标签转向同一个方向。</p>
+
+        <div class="options">
+          <div class="opt" data-mode="watching">
+            <div class="opt-icon">📐</div>
+            <div class="opt-body">
+              <div class="opt-name">桌面对齐</div>
+              <div class="opt-desc">物品就地归整、朝向统一</div>
+            </div>
+            <div class="arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1F1B16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+          </div>
+          <div class="opt featured" data-mode="watching">
+            <div class="opt-icon">📚</div>
+            <div class="opt-body">
+              <div class="opt-name">收纳归位</div>
+              <div class="opt-desc">文件、书本收回书架，标签统一朝外</div>
+            </div>
+            <div class="arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+          </div>
+          <div class="opt" data-mode="watching">
+            <div class="opt-icon">✨</div>
+            <div class="opt-body">
+              <div class="opt-name">一键整理</div>
+              <div class="opt-desc">让机器人自己安排</div>
+            </div>
+            <div class="arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1F1B16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+          </div>
+        </div>
+
+        <div class="capability-note">
+          <div class="cap-badge">🎯</div>
+          <div class="cap-text">
+            <strong>精准朝向控制</strong>
+            <span>识别每个文件的标签，统一转向同一方向</span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ STATE 2: WATCHING ═══════════ -->
+    <div class="state" id="state-watching">
+      <div class="topbar on-photo" style="right:auto; width:58%;">
+        <div class="brand">
+          <img class="logo" src="assets/sudo-logo.png" alt="sudo">
+          <span class="sep">·</span>
+          <span class="scene">书房 · 收纳归位</span>
+        </div>
+      </div>
+      <div class="topbar" style="left:auto; width:42%;">
+        <div></div>
+        <div class="statuspill"><span class="ready"></span> 执行中</div>
+      </div>
+
+      <div class="cam-side desk" data-next="done">
+        <div class="viewfinder"><span></span><span></span></div>
+        <div class="desk-toys">
+          <!-- books already shelved (faded) -->
+          <img class="dt faded" src="assets/books2.png" style="left:16%; top:84%; width:158px; transform:translate(-50%,-50%) rotate(-5deg);">
+          <img class="dt faded" src="assets/books.png"  style="left:76%; top:85%; width:150px; transform:translate(-50%,-50%) rotate(6deg);">
+          <img class="dt faded" src="assets/mug.png"    style="left:50%; top:84%; width:82px;">
+          <!-- files: one being rotated (target), others waiting -->
+          <div class="prop faded" style="left:25%; top:65%; --rot:0deg; --tag:#C76E4A;">
+            <img src="assets/file1.png" style="width:74px;">
+            <span class="ftag">项目 A</span>
+          </div>
+          <div class="prop" style="left:40%; top:68%; --rot:-22deg; --tag:#9DBED1;">
+            <img src="assets/file1.png" style="width:72px;">
+            <span class="ftag">合同</span>
+          </div>
+          <div class="prop" style="left:69%; top:62%; --rot:0deg; --tag:#94A88F;">
+            <img src="assets/file2.png" style="width:76px;">
+            <span class="ftag">财务</span>
+          </div>
+          <div class="detect" style="left:69%; top:60%; width:96px; height:150px;">
+            <div class="detect-label">📁 财务文件 · 标签朝向 0° ✓</div>
+            <div class="detect-arrow">↻</div>
+          </div>
+        </div>
+        <div class="click-hint">▷ 点击屏幕模拟"机器人完成"</div>
+      </div>
+
+      <div class="plan-side">
+        <span class="task-tag"><span class="tag-dot"></span> 收纳归位 · 标签朝外</span>
+        <h2 class="task-title">机器人在整理</h2>
+        <p class="task-now">看到 6 件，正在归位并统一朝向</p>
+
+        <div class="progress-row">
+          <div class="prog-bar"><div class="prog-fill"></div></div>
+          <div class="prog-num">4 / 6</div>
+        </div>
+
+        <div class="plan-list-title">整理计划</div>
+        <div class="plan-list">
+          <div class="plan-step done">
+            <div class="step-dot"></div>
+            <div class="step-cat">书本归位 · 书脊朝外</div>
+            <div class="step-count">2 摞</div>
+          </div>
+          <div class="plan-step done">
+            <div class="step-dot"></div>
+            <div class="step-cat">杯子归位</div>
+            <div class="step-count">1 个</div>
+          </div>
+          <div class="plan-step active">
+            <div class="step-dot"></div>
+            <div class="step-cat">文件收纳 · <span class="step-hint">标签朝外</span></div>
+            <div class="step-count">3 个 · 进行中</div>
+          </div>
+        </div>
+
+        <div class="now-doing">
+          <div class="robot">◉</div>
+          <div>
+            <div class="lbl">正在执行</div>
+            <div class="what">旋转「财务」文件 → 标签朝外，放入书架</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ═══════════ STATE 3: COMPLETION ═══════════ -->
+    <div class="state" id="state-done">
+      <div class="topbar">
+        <div class="brand">
+          <img class="logo" src="assets/sudo-logo.png" alt="sudo">
+          <span class="sep">·</span>
+          <span class="scene">书房 · 整理完成</span>
+        </div>
+        <div class="statuspill"><span class="ready"></span> 完成</div>
+      </div>
+
+      <div style="margin-top:24px;">
+        <div class="done-eyebrow"><span>✓</span> 整理完成</div>
+        <h1 class="done-title">都归位了</h1>
+        <p class="done-sub">所有文件标签、书脊统一朝外 —— 一眼就能找到想要的那一份。</p>
+      </div>
+
+      <div class="shelf">
+        <div class="aligned-badge"><span class="ck">✓</span> 标签朝向 100% 统一</div>
+        <div class="shelf-item" style="--tag:#C76E4A;">
+          <img src="assets/file1.png" style="width:96px;">
+          <span class="ftag">项目 A</span>
+        </div>
+        <div class="shelf-item" style="--tag:#9DBED1;">
+          <img src="assets/file1.png" style="width:96px;">
+          <span class="ftag">合同</span>
+        </div>
+        <div class="shelf-item" style="--tag:#94A88F;">
+          <img src="assets/file2.png" style="width:98px;">
+          <span class="ftag">财务</span>
+        </div>
+        <div class="shelf-item">
+          <img src="assets/books2.png" style="width:150px;">
+        </div>
+        <div class="shelf-item">
+          <img src="assets/mug.png" style="width:84px;">
+        </div>
+      </div>
+
+      <div class="done-stats">
+        <div class="dstat"><div class="dval">6</div><div class="dlbl">件物品归位</div></div>
+        <div class="dstat"><div class="dval">48<span style="font-size:16px;">秒</span></div><div class="dlbl">用时</div></div>
+        <div class="dstat"><div class="dval">100%</div><div class="dlbl">标签朝向统一</div></div>
+      </div>
+
+      <div class="done-cta">
+        <button class="btn btn-secondary" data-mode="entry">📷 拍照分享</button>
+        <button class="btn btn-secondary" data-mode="entry">↻ 再来一次</button>
+        <button class="btn btn-primary" data-mode="entry">下一位 →</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer-label">
+  <span>WAIC 2026 · 整理书桌原型 · 1180×820</span>
+  <span style="opacity:.4;">|</span>
+  <span>点击 <kbd>选项</kbd> 看机器人执行 · 顶部切换场景</span>
+</div>
+
+<script>
+function goTo(id){ document.querySelectorAll('.state').forEach(s=>s.classList.remove('active')); const t=document.getElementById('state-'+id); if(t) t.classList.add('active'); }
+document.addEventListener('click',(e)=>{
+  const m=e.target.closest('[data-mode]'); if(m){ goTo(m.dataset.mode); return; }
+  const c=e.target.closest('[data-next]'); if(c) goTo(c.dataset.next);
+});
+</script>
+
+</body>
+</html>

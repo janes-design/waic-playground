@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1366,initial-scale=1">
+<title>WAIC Demo · 餐具摆台</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#F8F3EA; --cream-deep:#EFE6D4; --paper:#FFFFFF;
+  --ink:#1F1B16; --ink-soft:#6F6557; --ink-faint:#ADA395;
+  --sudo-navy:#1E3A5F; --terracotta:#C76E4A; --terracotta-deep:#A85432;
+  --mustard:#DBA84A; --green-soft:#B6CBA8; --gold:#B89653;
+  --shadow:0 1px 2px rgba(31,27,22,.04),0 8px 24px rgba(31,27,22,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}
+body{font-family:'Plus Jakarta Sans','PingFang SC',-apple-system,sans-serif;background:#2B2925;color:var(--ink);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;gap:22px;}
+
+.scene-switcher{display:flex;gap:4px;background:rgba(255,255,255,.05);padding:5px;border-radius:999px;border:1px solid rgba(255,255,255,.06);}
+.scene-switcher a,.scene-switcher button{padding:9px 16px;font-size:12px;font-weight:500;color:rgba(255,255,255,.5);background:transparent;border:none;border-radius:999px;cursor:pointer;font-family:inherit;letter-spacing:.02em;transition:all .2s;white-space:nowrap;text-decoration:none;}
+.scene-switcher a:hover{color:rgba(255,255,255,.9);}
+.scene-switcher a.active{background:rgba(255,255,255,.96);color:var(--ink);}
+.scene-switcher button:disabled{color:rgba(255,255,255,.22);cursor:not-allowed;}
+
+.ipad{width:1180px;height:820px;background:#0E0D0C;border-radius:38px;padding:10px;box-shadow:0 40px 100px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.04) inset;position:relative;}
+.ipad::before{content:'';position:absolute;left:50%;top:18px;transform:translateX(-50%);width:60px;height:4px;border-radius:2px;background:rgba(255,255,255,.08);}
+.screen{width:100%;height:100%;background:var(--cream);border-radius:28px;overflow:hidden;position:relative;}
+.state{display:none;height:100%;width:100%;}
+.state.active{display:flex;}
+
+.topbar{position:absolute;top:0;left:0;right:0;height:60px;padding:0 28px;display:flex;align-items:center;justify-content:space-between;z-index:10;pointer-events:none;}
+.topbar.on-photo{background:linear-gradient(180deg,rgba(255,255,255,.8) 0%,rgba(255,255,255,0) 100%);}
+.brand{display:flex;align-items:center;gap:12px;}
+.brand img.logo{height:22px;display:block;}
+.brand .sep{color:var(--ink-faint);opacity:.5;}
+.brand .scene{font-weight:500;color:var(--ink-soft);font-size:13px;}
+.statuspill{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:rgba(255,255,255,.75);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:999px;font-size:12px;color:var(--ink-soft);border:1px solid rgba(31,27,22,.06);}
+.statuspill .ready{width:6px;height:6px;border-radius:50%;background:#4FAE5C;box-shadow:0 0 0 3px rgba(79,174,92,.18);}
+
+/* desk + settings */
+.desk{position:relative;background:#c9bca6 url('assets/robot in the dinning room.jpg') center/cover no-repeat;overflow:hidden;}
+.settings{position:absolute;inset:0;z-index:2;}
+.placemat{position:absolute;transform:translate(-50%,-50%) rotate(var(--rot,0deg));filter:drop-shadow(0 12px 16px rgba(40,24,8,.3));border-radius:8px;transition:opacity .4s;}
+.counted{position:absolute;top:76px;left:28px;background:rgba(31,27,22,.82);color:rgba(255,255,255,.95);padding:10px 16px;border-radius:12px;font-size:12px;font-weight:500;backdrop-filter:blur(20px);display:flex;align-items:center;gap:10px;z-index:5;}
+.counted .num{color:var(--mustard);font-weight:700;}
+
+/* detection */
+.detect{position:absolute;border:2px solid var(--terracotta);border-radius:6px;z-index:6;box-shadow:0 0 0 4px rgba(199,110,74,.16);transform:translate(-50%,-50%);}
+.detect-label{position:absolute;top:-26px;left:-2px;background:var(--terracotta);color:white;font-size:10px;font-weight:600;padding:4px 8px;border-radius:4px;white-space:nowrap;letter-spacing:.03em;}
+
+/* generic panel */
+.panel-side{flex:1;background:var(--paper);padding:70px 50px 36px;display:flex;flex-direction:column;}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--terracotta);margin-bottom:18px;}
+.hero-title{font-family:'DM Serif Display','PingFang SC',serif;font-size:42px;line-height:1.1;color:var(--ink);letter-spacing:-.01em;margin-bottom:12px;}
+.hero-sub{font-size:14px;color:var(--ink-soft);line-height:1.55;margin-bottom:28px;}
+
+/* occasion cards */
+#state-entry .scene-side{flex:1.3;}
+.occ-cards{display:grid;grid-template-columns:1fr 1fr;gap:14px;}
+.occ{border:2px solid transparent;border-radius:18px;overflow:hidden;cursor:pointer;background:var(--cream);transition:all .2s;}
+.occ:hover{transform:translateY(-2px);border-color:var(--gold);box-shadow:var(--shadow);}
+.occ .occ-img{width:100%;aspect-ratio:4/3;object-fit:cover;display:block;}
+.occ .occ-body{padding:14px 16px;}
+.occ .occ-name{font-size:16px;font-weight:700;color:var(--ink);}
+.occ .occ-en{font-size:11px;color:var(--ink-faint);font-weight:600;letter-spacing:.08em;text-transform:uppercase;margin-top:1px;}
+.occ .occ-desc{font-size:12px;color:var(--ink-soft);margin-top:6px;line-height:1.4;}
+.cap-note{margin-top:auto;padding-top:24px;border-top:1px solid rgba(31,27,22,.08);display:flex;align-items:center;gap:14px;}
+.cap-badge{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--terracotta),var(--terracotta-deep));color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 4px 12px rgba(199,110,74,.25);}
+.cap-text strong{display:block;font-size:13px;font-weight:600;color:var(--ink);}
+.cap-text span{font-size:12px;color:var(--ink-soft);margin-top:1px;}
+
+/* people select */
+#state-people .scene-side{flex:1.3;}
+.backlink{font-size:12px;color:var(--ink-soft);cursor:pointer;margin-bottom:18px;display:inline-flex;align-items:center;gap:6px;align-self:flex-start;}
+.backlink:hover{color:var(--ink);}
+.people-opts{display:flex;flex-direction:column;gap:10px;}
+.popt{display:flex;align-items:center;gap:18px;padding:18px 20px;background:var(--cream);border:1px solid transparent;border-radius:16px;cursor:pointer;transition:all .2s;}
+.popt:hover{background:var(--cream-deep);transform:translateY(-1px);border-color:rgba(184,150,83,.3);}
+.popt.featured{background:var(--ink);color:var(--cream);}
+.popt.featured:hover{background:#000;}
+.popt.featured .popt-name{color:#fff;}
+.popt.featured .popt-sub{color:rgba(255,255,255,.6);}
+.popt .seats{font-size:22px;width:46px;text-align:center;flex-shrink:0;}
+.popt-name{font-size:16px;font-weight:600;color:var(--ink);}
+.popt-sub{font-size:12px;color:var(--ink-soft);margin-top:1px;}
+.popt .arrow{margin-left:auto;}
+.chosen-chip{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;background:var(--cream);border-radius:999px;font-size:12px;font-weight:600;color:var(--ink-soft);align-self:flex-start;margin-bottom:18px;}
+.chosen-chip .cdot{width:14px;height:14px;border-radius:4px;background:var(--gold);}
+
+/* watching */
+#state-watching .scene-side{flex:1.4;cursor:pointer;}
+.viewfinder{position:absolute;top:76px;left:24px;right:24px;bottom:24px;pointer-events:none;z-index:3;}
+.viewfinder::before,.viewfinder::after,.viewfinder>span:nth-child(1),.viewfinder>span:nth-child(2){content:'';position:absolute;width:26px;height:26px;border:2px solid rgba(255,255,255,.85);}
+.viewfinder::before{top:0;left:0;border-right:none;border-bottom:none;}
+.viewfinder::after{top:0;right:0;border-left:none;border-bottom:none;}
+.viewfinder>span:nth-child(1){bottom:0;left:0;border-right:none;border-top:none;}
+.viewfinder>span:nth-child(2){bottom:0;right:0;border-left:none;border-top:none;}
+.task-tag{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;background:var(--cream);border-radius:999px;font-size:11px;font-weight:600;color:var(--ink-soft);align-self:flex-start;margin-bottom:18px;letter-spacing:.03em;}
+.task-tag .tag-dot{width:6px;height:6px;border-radius:50%;background:var(--gold);}
+.task-title{font-family:'DM Serif Display',serif;font-size:32px;line-height:1.15;color:var(--ink);margin-bottom:8px;}
+.task-now{font-size:13px;color:var(--ink-soft);margin-bottom:24px;}
+.progress-row{display:flex;align-items:center;gap:12px;margin-bottom:26px;}
+.prog-bar{flex:1;height:6px;background:var(--cream-deep);border-radius:999px;overflow:hidden;}
+.prog-fill{width:60%;height:100%;background:linear-gradient(90deg,var(--gold),var(--mustard));border-radius:999px;}
+.prog-num{font-size:12px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;}
+.plan-list-title{font-size:11px;font-weight:700;color:var(--ink-faint);letter-spacing:.14em;text-transform:uppercase;margin-bottom:12px;}
+.plan-list{display:flex;flex-direction:column;gap:3px;}
+.plan-step{display:flex;align-items:center;gap:13px;padding:10px 14px;border-radius:11px;font-size:13px;}
+.plan-step.done{color:var(--ink-faint);}
+.plan-step.done .step-dot{background:var(--green-soft);}
+.plan-step.done .step-dot::after{content:'✓';color:white;font-size:10px;font-weight:700;}
+.plan-step.active{background:var(--cream);color:var(--ink);font-weight:500;}
+.plan-step.active .step-dot{background:var(--gold);box-shadow:0 0 0 4px rgba(184,150,83,.2);animation:pulse 1.6s infinite;}
+.plan-step.pending{color:var(--ink-faint);}
+.plan-step.pending .step-dot{background:var(--cream-deep);}
+.step-dot{width:17px;height:17px;border-radius:50%;display:flex;align-items:center;justify-content:center;flex-shrink:0;}
+.step-cat{flex:1;}
+.step-hint{font-size:10px;color:var(--terracotta);font-weight:700;}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 4px rgba(184,150,83,.2);}50%{box-shadow:0 0 0 8px rgba(184,150,83,.08);}}
+.now-doing{margin-top:auto;padding:16px;background:var(--cream);border-radius:12px;display:flex;align-items:center;gap:12px;}
+.now-doing .robot{width:32px;height:32px;border-radius:8px;background:var(--ink);display:flex;align-items:center;justify-content:center;color:var(--mustard);font-size:14px;flex-shrink:0;}
+.now-doing .lbl{font-size:11px;color:var(--ink-faint);letter-spacing:.03em;text-transform:uppercase;font-weight:600;}
+.now-doing .what{font-size:13px;color:var(--ink);font-weight:500;margin-top:1px;}
+.click-hint{position:absolute;bottom:20px;right:20px;font-size:10px;color:var(--ink-soft);background:rgba(255,255,255,.9);padding:6px 12px;border-radius:999px;letter-spacing:.04em;border:1px dashed rgba(31,27,22,.18);z-index:20;pointer-events:none;}
+
+/* done */
+#state-done .scene-side{flex:1.4;}
+.done-eyebrow{font-size:11px;font-weight:700;color:#4FAE5C;letter-spacing:.18em;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.done-title{font-family:'DM Serif Display',serif;font-size:42px;color:var(--ink);letter-spacing:-.02em;line-height:1.05;margin-bottom:10px;}
+.done-sub{font-size:14px;color:var(--ink-soft);line-height:1.5;margin-bottom:26px;}
+.checks{display:flex;flex-direction:column;gap:8px;margin-bottom:24px;}
+.chk{display:flex;align-items:center;gap:12px;padding:13px 16px;background:var(--cream);border-radius:13px;font-size:13px;color:var(--ink);}
+.chk .ci{width:24px;height:24px;border-radius:50%;background:var(--green-soft);color:#fff;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0;}
+.done-stats{display:flex;gap:36px;margin-bottom:24px;}
+.dstat .dval{font-family:'DM Serif Display',serif;font-size:28px;color:var(--ink);line-height:1;font-variant-numeric:tabular-nums;}
+.dstat .dlbl{font-size:11px;color:var(--ink-faint);font-weight:600;letter-spacing:.04em;margin-top:6px;}
+.done-cta{display:flex;gap:12px;margin-top:auto;}
+.btn{padding:14px 24px;border-radius:999px;font-size:13px;font-weight:600;letter-spacing:.02em;border:none;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:8px;transition:transform .15s;}
+.btn:hover{transform:translateY(-1px);}
+.btn-primary{background:var(--ink);color:white;flex:1;justify-content:center;}
+.btn-secondary{background:var(--paper);color:var(--ink);border:1px solid rgba(31,27,22,.1);}
+
+.footer-label{color:rgba(255,255,255,.45);font-size:11px;letter-spacing:.04em;display:flex;align-items:center;gap:8px;}
+.footer-label kbd{background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);padding:2px 8px;border-radius:4px;font-size:10px;font-family:inherit;border:1px solid rgba(255,255,255,.1);}
+</style>
+</head>
+<body>
+
+<div class="scene-switcher">
+  <a href="study_tidy.html">书房 · 整理书桌</a>
+  <a class="active" href="dining_table.html">餐厅 · 餐具摆台</a>
+  <a href="kitchen_trash.html">厨房 · 垃圾分类</a>
+  <a href="toy_sorting.html">儿童房 · 玩具收纳</a>
+  <a href="lego_sorting.html">儿童房 · 乐高分拣</a>
+</div>
+
+<div class="ipad">
+  <div class="screen">
+
+    <!-- STATE 1: OCCASION -->
+    <div class="state active" id="state-entry">
+      <div class="topbar on-photo" style="right:auto;width:56%;">
+        <div class="brand"><img class="logo" src="assets/sudo-logo.png" alt="sudo"><span class="sep">·</span><span class="scene">餐厅</span></div>
+      </div>
+      <div class="topbar" style="left:auto;width:44%;"><div></div><div class="statuspill"><span class="ready"></span> 机器人就绪</div></div>
+
+      <div class="scene-side desk"></div>
+
+      <div class="panel-side">
+        <div class="eyebrow">餐厅 · 任务 04</div>
+        <h1 class="hero-title">今天，<br/>摆哪种席？</h1>
+        <p class="hero-sub">选择场合，机器人会取对应餐具，按规范把餐位摆好。</p>
+
+        <div class="occ-cards">
+          <div class="occ" data-occasion="western" data-mode="people">
+            <img class="occ-img" src="assets/us table setting.jpg" alt="西餐">
+            <div class="occ-body">
+              <div class="occ-name">西餐</div>
+              <div class="occ-en">Western</div>
+              <div class="occ-desc">装饰盘、刀叉、水杯</div>
+            </div>
+          </div>
+          <div class="occ" data-occasion="chinese" data-mode="people">
+            <img class="occ-img" src="assets/chinese table setting.jpg" alt="中餐">
+            <div class="occ-body">
+              <div class="occ-name">中餐</div>
+              <div class="occ-en">Chinese</div>
+              <div class="occ-desc">餐盘、汤碗、筷子、茶杯</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cap-note">
+          <div class="cap-badge">🎯</div>
+          <div class="cap-text"><strong>规范摆放 + 多位对称</strong><span>刀刃朝内、餐具对齐，多个餐位完全一致</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATE 2: PEOPLE -->
+    <div class="state" id="state-people">
+      <div class="topbar on-photo" style="right:auto;width:56%;">
+        <div class="brand"><img class="logo" src="assets/sudo-logo.png" alt="sudo"><span class="sep">·</span><span class="scene">餐厅</span></div>
+      </div>
+      <div class="topbar" style="left:auto;width:44%;"><div></div><div class="statuspill"><span class="ready"></span> 机器人就绪</div></div>
+
+      <div class="scene-side desk"></div>
+
+      <div class="panel-side">
+        <span class="backlink" data-mode="entry">‹ 重选场合</span>
+        <div class="chosen-chip"><span class="cdot" id="chip-dot"></span><span id="chip-occ">西餐</span></div>
+        <h1 class="hero-title">几位<br/>入座？</h1>
+        <p class="hero-sub">机器人会为每一位摆好完全一致的餐位。</p>
+
+        <div class="people-opts">
+          <div class="popt" data-people="1" data-mode="watching">
+            <div class="seats">👤</div>
+            <div><div class="popt-name">1 位</div><div class="popt-sub">单人餐位</div></div>
+            <div class="arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1F1B16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+          </div>
+          <div class="popt featured" data-people="2" data-mode="watching">
+            <div class="seats">👥</div>
+            <div><div class="popt-name">2 位</div><div class="popt-sub">双人 · 对称摆放</div></div>
+            <div class="arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+          </div>
+          <div class="popt" data-people="4" data-mode="watching">
+            <div class="seats">🍽️</div>
+            <div><div class="popt-name">4 位</div><div class="popt-sub">宴客 · 四向一致</div></div>
+            <div class="arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#1F1B16" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATE 3: WATCHING -->
+    <div class="state" id="state-watching">
+      <div class="topbar on-photo" style="right:auto;width:58%;">
+        <div class="brand"><img class="logo" src="assets/sudo-logo.png" alt="sudo"><span class="sep">·</span><span class="scene" id="w-scene">餐厅 · 西餐 · 2 位</span></div>
+      </div>
+      <div class="topbar" style="left:auto;width:42%;"><div></div><div class="statuspill"><span class="ready"></span> 执行中</div></div>
+
+      <div class="scene-side desk" data-next="done">
+        <div class="viewfinder"><span></span><span></span></div>
+        <div class="settings" id="w-settings"></div>
+        <div class="detect" id="w-detect" style="left:29%;top:80%;width:150px;height:120px;">
+          <div class="detect-label" id="w-detect-label">🍴 餐叉 · 置于盘左</div>
+        </div>
+        <div class="click-hint">▷ 点击屏幕模拟"机器人完成"</div>
+      </div>
+
+      <div class="panel-side">
+        <span class="task-tag"><span class="tag-dot"></span> <span id="w-tag">西餐摆台 · 按规范</span></span>
+        <h2 class="task-title">机器人在摆台</h2>
+        <p class="task-now" id="w-now">为 2 位摆放，每位完全一致</p>
+
+        <div class="progress-row">
+          <div class="prog-bar"><div class="prog-fill"></div></div>
+          <div class="prog-num" id="w-prog">4 / 6</div>
+        </div>
+
+        <div class="plan-list-title">摆放规则</div>
+        <div class="plan-list" id="w-plan"></div>
+
+        <div class="now-doing">
+          <div class="robot">◉</div>
+          <div><div class="lbl">正在执行</div><div class="what" id="w-what">摆放餐叉 → 盘子左侧</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- STATE 4: DONE -->
+    <div class="state" id="state-done">
+      <div class="topbar on-photo" style="right:auto;width:58%;">
+        <div class="brand"><img class="logo" src="assets/sudo-logo.png" alt="sudo"><span class="sep">·</span><span class="scene" id="d-scene">餐厅 · 西餐 · 2 位</span></div>
+      </div>
+      <div class="topbar" style="left:auto;width:42%;"><div></div><div class="statuspill"><span class="ready"></span> 完成</div></div>
+
+      <div class="scene-side desk">
+        <div class="settings" id="d-settings"></div>
+      </div>
+
+      <div class="panel-side">
+        <div class="done-eyebrow"><span>✓</span> 摆台完成</div>
+        <h1 class="done-title" id="d-title">2 位餐位<br/>摆好了</h1>
+        <p class="done-sub" id="d-sub">每个餐位都按西式规范摆放，两位完全对称一致。</p>
+
+        <div class="checks" id="d-checks"></div>
+
+        <div class="done-stats">
+          <div class="dstat"><div class="dval" id="d-pieces">14</div><div class="dlbl">件餐具就位</div></div>
+          <div class="dstat"><div class="dval">68<span style="font-size:15px;">秒</span></div><div class="dlbl">用时</div></div>
+          <div class="dstat"><div class="dval">100%</div><div class="dlbl">对齐一致</div></div>
+        </div>
+
+        <div class="done-cta">
+          <button class="btn btn-secondary" data-mode="entry">📷 拍照分享</button>
+          <button class="btn btn-primary" data-mode="entry">下一位 →</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer-label">
+  <span>WAIC 2026 · 餐具摆台原型 · 1180×820</span>
+  <span style="opacity:.4;">|</span>
+  <span>点击 <kbd>场合</kbd> → <kbd>人数</kbd> → 看机器人摆台 · 顶部切换场景</span>
+</div>
+
+<script>
+const DATA = {
+  western: {
+    img:'assets/set-us.jpg', name:'西餐', pieces:7,
+    plan:[
+      {t:'装饰盘居中、对齐桌沿', s:'done'},
+      {t:'餐巾叠放盘上', s:'done'},
+      {t:'餐叉置于盘左', s:'done'},
+      {t:'餐刀置于盘右', hint:'刀刃朝内', s:'active'},
+      {t:'汤勺置于刀外侧', s:'pending'},
+      {t:'水杯置于刀尖上方', s:'pending'},
+    ],
+    detect:'🍴 餐叉 · 置于盘左', what:'摆放餐刀 → 盘子右侧，刀刃朝内',
+    checks:['装饰盘居中、对齐桌沿','刀刃统一朝内','每位餐具完全对称'],
+  },
+  chinese: {
+    img:'assets/set-cn.jpg', name:'中餐', pieces:6,
+    plan:[
+      {t:'餐盘居中', s:'done'},
+      {t:'汤碗置于盘上', s:'done'},
+      {t:'筷子置于右侧筷架', hint:'头尾对齐', s:'active'},
+      {t:'汤勺入碗', s:'pending'},
+      {t:'小碟左上、茶杯右上', s:'pending'},
+      {t:'餐巾叠放', s:'pending'},
+    ],
+    detect:'🥢 筷子 · 置于右侧筷架', what:'摆放筷子 → 右侧筷架，头尾对齐',
+    checks:['餐盘、汤碗居中对齐','筷子统一头尾对齐','每位餐位完全一致'],
+  }
+};
+const POS = {
+  1:[{l:50,t:80,w:30}],
+  2:[{l:29,t:80,w:27},{l:71,t:80,w:27}],
+  4:[{l:27,t:82,w:22},{l:73,t:82,w:22},{l:27,t:53,w:20,r:180},{l:73,t:53,w:20,r:180}],
+};
+let sel = {occasion:'western', people:2};
+
+function renderSettings(containerId, faded){
+  const c=document.getElementById(containerId); if(!c) return;
+  const d=DATA[sel.occasion]; const pos=POS[sel.people]||POS[2];
+  c.innerHTML='';
+  pos.forEach((p,i)=>{
+    const img=document.createElement('img');
+    img.className='placemat'; img.src=d.img;
+    img.style.left=p.l+'%'; img.style.top=p.t+'%'; img.style.width=p.w+'%';
+    img.style.setProperty('--rot',(p.r||0)+'deg');
+    if(faded && i>0) img.style.opacity='.4'; // in watching, only first fully placed
+    c.appendChild(img);
+  });
+}
+function renderPlan(){
+  const d=DATA[sel.occasion];
+  document.getElementById('w-plan').innerHTML = d.plan.map(st=>
+    `<div class="plan-step ${st.s}"><div class="step-dot"></div><div class="step-cat">${st.t}${st.hint?' · <span class="step-hint">'+st.hint+'</span>':''}</div></div>`
+  ).join('');
+  document.getElementById('w-detect-label').textContent=d.detect;
+  document.getElementById('w-what').textContent=d.what;
+  document.getElementById('w-tag').textContent=d.name+'摆台 · 按规范';
+  document.getElementById('w-now').textContent=`为 ${sel.people} 位摆放，每位完全一致`;
+  document.getElementById('w-scene').textContent=`餐厅 · ${d.name} · ${sel.people} 位`;
+  document.getElementById('w-prog').textContent = (sel.occasion==='chinese'?'2 / 6':'4 / 6');
+}
+function renderDone(){
+  const d=DATA[sel.occasion];
+  document.getElementById('d-scene').textContent=`餐厅 · ${d.name} · ${sel.people} 位`;
+  document.getElementById('d-title').innerHTML=`${sel.people} 位餐位<br/>摆好了`;
+  document.getElementById('d-sub').textContent=`每个餐位都按${d.name=='西餐'?'西式':'中式'}规范摆放，${sel.people>1?sel.people+' 位完全对称一致。':'整齐对齐到位。'}`;
+  document.getElementById('d-checks').innerHTML=d.checks.map(c=>`<div class="chk"><div class="ci">✓</div>${c}</div>`).join('');
+  document.getElementById('d-pieces').textContent = d.pieces*sel.people;
+}
+
+function goTo(id){
+  if(id==='watching'){ renderSettings('w-settings',true); renderPlan(); }
+  if(id==='done'){ renderSettings('d-settings',false); renderDone(); }
+  if(id==='people'){ const d=DATA[sel.occasion]; document.getElementById('chip-occ').textContent=d.name; }
+  document.querySelectorAll('.state').forEach(s=>s.classList.remove('active'));
+  const t=document.getElementById('state-'+id); if(t) t.classList.add('active');
+}
+document.addEventListener('click',(e)=>{
+  const occ=e.target.closest('[data-occasion]'); if(occ){ sel.occasion=occ.dataset.occasion; }
+  const pp=e.target.closest('[data-people]'); if(pp){ sel.people=parseInt(pp.dataset.people); }
+  const m=e.target.closest('[data-mode]'); if(m){ goTo(m.dataset.mode); return; }
+  const c=e.target.closest('[data-next]'); if(c){ goTo(c.dataset.next); }
+});
+</script>
+</body>
+</html>

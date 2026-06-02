@@ -1,0 +1,364 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=1366,initial-scale=1">
+<title>WAIC Demo · 乐高分拣</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#F8F3EA; --cream-deep:#EFE6D4; --paper:#FFFFFF;
+  --ink:#1F1B16; --ink-soft:#6F6557; --ink-faint:#ADA395;
+  --sudo-navy:#1E3A5F; --terracotta:#C76E4A; --terracotta-deep:#A85432;
+  --mustard:#DBA84A; --green-soft:#B6CBA8;
+  --lego-red:#D8392B; --lego-yellow:#E8B62E; --lego-blue:#2E72C4; --lego-green:#5BA03E;
+  --shadow:0 1px 2px rgba(31,27,22,.04),0 8px 24px rgba(31,27,22,.06);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}
+body{font-family:'Plus Jakarta Sans','PingFang SC',-apple-system,sans-serif;background:#2B2925;color:var(--ink);min-height:100vh;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:32px;gap:22px;}
+
+/* scene switcher */
+.scene-switcher{display:flex;gap:4px;background:rgba(255,255,255,.05);padding:5px;border-radius:999px;border:1px solid rgba(255,255,255,.06);}
+.scene-switcher a,.scene-switcher button{padding:9px 16px;font-size:12px;font-weight:500;color:rgba(255,255,255,.5);background:transparent;border:none;border-radius:999px;cursor:pointer;font-family:inherit;letter-spacing:.02em;transition:all .2s;white-space:nowrap;text-decoration:none;}
+.scene-switcher a:hover{color:rgba(255,255,255,.9);}
+.scene-switcher a.active{background:rgba(255,255,255,.96);color:var(--ink);}
+.scene-switcher button:disabled{color:rgba(255,255,255,.22);cursor:not-allowed;}
+
+/* iPad */
+.ipad{width:1180px;height:820px;background:#0E0D0C;border-radius:38px;padding:10px;box-shadow:0 40px 100px rgba(0,0,0,.5),0 0 0 1px rgba(255,255,255,.04) inset;position:relative;}
+.ipad::before{content:'';position:absolute;left:50%;top:18px;transform:translateX(-50%);width:60px;height:4px;border-radius:2px;background:rgba(255,255,255,.08);}
+.screen{width:100%;height:100%;background:var(--cream);border-radius:28px;overflow:hidden;position:relative;}
+.state{display:none;height:100%;width:100%;}
+.state.active{display:flex;}
+
+/* brand */
+.topbar{position:absolute;top:0;left:0;right:0;height:60px;padding:0 28px;display:flex;align-items:center;justify-content:space-between;z-index:10;pointer-events:none;}
+.topbar.on-photo{background:linear-gradient(180deg,rgba(255,255,255,.85) 0%,rgba(255,255,255,0) 100%);}
+.brand{display:flex;align-items:center;gap:12px;}
+.brand img.logo{height:22px;display:block;}
+.brand .sep{color:var(--ink-faint);opacity:.5;}
+.brand .scene{font-weight:500;color:var(--ink-soft);font-size:13px;}
+.statuspill{display:inline-flex;align-items:center;gap:8px;padding:8px 14px;background:rgba(255,255,255,.75);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-radius:999px;font-size:12px;color:var(--ink-soft);border:1px solid rgba(31,27,22,.06);}
+.statuspill .ready{width:6px;height:6px;border-radius:50%;background:#4FAE5C;box-shadow:0 0 0 3px rgba(79,174,92,.18);}
+
+/* desk + props */
+.desk{position:relative;background:#d9c3a3 url('assets/robot-bg.jpg') center/cover no-repeat;overflow:hidden;}
+.desk-toys{position:absolute;inset:0;z-index:2;}
+.dt{position:absolute;filter:drop-shadow(0 8px 10px rgba(40,24,8,.32));transform:translate(-50%,-50%);transition:opacity .3s;user-select:none;pointer-events:none;}
+.dt.faded{opacity:.32;filter:drop-shadow(0 4px 6px rgba(40,24,8,.2)) grayscale(.2);}
+
+/* CSS lego brick */
+.lego{background:var(--c);border-radius:5px;display:flex;justify-content:center;gap:16%;align-items:flex-start;box-shadow:inset 0 -7px 0 rgba(0,0,0,.20),inset 0 5px 0 rgba(255,255,255,.26),0 5px 9px rgba(40,24,8,.28);}
+.lego i{width:28%;aspect-ratio:1;margin-top:-9px;border-radius:50%;background:var(--c);box-shadow:inset 0 -2px 0 rgba(0,0,0,.18),inset 0 2px 0 rgba(255,255,255,.4),0 1px 2px rgba(0,0,0,.2);border:1px solid rgba(0,0,0,.06);}
+.brick{position:absolute;z-index:2;transform:translate(-50%,-50%) rotate(var(--rot,0deg));}
+.brick.faded{opacity:.3;filter:grayscale(.3);}
+.counted{position:absolute;top:76px;left:28px;background:rgba(31,27,22,.82);color:rgba(255,255,255,.95);padding:10px 16px;border-radius:12px;font-size:12px;font-weight:500;backdrop-filter:blur(20px);display:flex;align-items:center;gap:10px;z-index:5;}
+.counted .num{color:var(--mustard);font-weight:700;}
+
+/* on-desk collecting bin */
+.deskbin{position:absolute;z-index:4;width:150px;height:96px;border-radius:14px;background:rgba(255,255,255,.16);border:2px solid rgba(255,255,255,.6);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;gap:2px;padding:10px;box-shadow:0 10px 24px rgba(40,24,8,.25);transform:translate(-50%,-50%);}
+.deskbin .bin-tag{position:absolute;top:-12px;left:50%;transform:translateX(-50%);background:var(--lego-red);color:#fff;font-size:11px;font-weight:700;padding:3px 12px;border-radius:999px;white-space:nowrap;}
+.deskbin img{width:46px;filter:drop-shadow(0 3px 4px rgba(0,0,0,.3));}
+.deskbin img:nth-child(3){margin-top:14px;}
+
+/* detection */
+.detect{position:absolute;border:2px solid var(--terracotta);border-radius:6px;z-index:6;box-shadow:0 0 0 4px rgba(199,110,74,.15);transform:translate(-50%,-50%);}
+.detect-label{position:absolute;top:-26px;left:-2px;background:var(--terracotta);color:white;font-size:10px;font-weight:600;padding:4px 8px;border-radius:4px;white-space:nowrap;letter-spacing:.03em;}
+
+/* ENTRY */
+#state-entry .scene-side{flex:1.32;}
+#state-entry .panel-side{flex:1;background:var(--paper);padding:72px 52px 36px;display:flex;flex-direction:column;}
+.eyebrow{font-size:11px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:var(--terracotta);margin-bottom:18px;}
+.hero-title{font-family:'DM Serif Display','PingFang SC',serif;font-size:44px;line-height:1.1;color:var(--ink);letter-spacing:-.01em;margin-bottom:12px;}
+.hero-sub{font-size:14px;color:var(--ink-soft);line-height:1.55;margin-bottom:30px;}
+
+/* color grid */
+.color-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:12px;}
+.color-opt{display:flex;align-items:center;gap:14px;padding:16px 16px;background:var(--cream);border:1px solid transparent;border-radius:16px;cursor:pointer;transition:all .2s;}
+.color-opt:hover{background:var(--cream-deep);transform:translateY(-1px);border-color:rgba(0,0,0,.06);}
+.swatch{width:38px;height:38px;border-radius:10px;flex-shrink:0;box-shadow:inset 0 -4px 0 rgba(0,0,0,.18),inset 0 3px 0 rgba(255,255,255,.3),0 2px 5px rgba(0,0,0,.12);position:relative;}
+.swatch::after{content:'';position:absolute;top:7px;left:8px;width:8px;height:8px;border-radius:50%;background:rgba(255,255,255,.35);box-shadow:14px 0 0 rgba(255,255,255,.35);}
+.co-name{font-size:15px;font-weight:600;color:var(--ink);}
+.co-count{font-size:11px;color:var(--ink-soft);margin-top:1px;}
+.opt.featured{display:flex;align-items:center;gap:16px;padding:18px 20px;background:var(--ink);color:var(--cream);border-radius:16px;cursor:pointer;transition:all .2s;}
+.opt.featured:hover{background:#000;transform:translateY(-1px);}
+.opt.featured .opt-icon{width:42px;height:42px;border-radius:11px;background:rgba(255,255,255,.1);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;}
+.opt.featured .opt-name{font-size:15px;font-weight:600;color:var(--paper);}
+.opt.featured .opt-desc{font-size:12px;color:rgba(255,255,255,.6);margin-top:2px;}
+.opt.featured .arrow{margin-left:auto;}
+.capability-note{margin-top:auto;padding-top:24px;border-top:1px solid rgba(31,27,22,.08);display:flex;align-items:center;gap:14px;}
+.cap-badge{width:40px;height:40px;border-radius:12px;background:linear-gradient(135deg,var(--terracotta),var(--terracotta-deep));color:#fff;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0;box-shadow:0 4px 12px rgba(199,110,74,.25);}
+.cap-text strong{display:block;font-size:13px;font-weight:600;color:var(--ink);}
+.cap-text span{font-size:12px;color:var(--ink-soft);margin-top:1px;}
+
+/* WATCHING */
+#state-watching .cam-side{flex:1.4;cursor:pointer;}
+.viewfinder{position:absolute;top:76px;left:24px;right:24px;bottom:24px;pointer-events:none;z-index:3;}
+.viewfinder::before,.viewfinder::after,.viewfinder>span:nth-child(1),.viewfinder>span:nth-child(2){content:'';position:absolute;width:26px;height:26px;border:2px solid rgba(255,255,255,.7);}
+.viewfinder::before{top:0;left:0;border-right:none;border-bottom:none;}
+.viewfinder::after{top:0;right:0;border-left:none;border-bottom:none;}
+.viewfinder>span:nth-child(1){bottom:0;left:0;border-right:none;border-top:none;}
+.viewfinder>span:nth-child(2){bottom:0;right:0;border-left:none;border-top:none;}
+#state-watching .plan-side{flex:1;background:var(--paper);padding:72px 44px 36px;display:flex;flex-direction:column;}
+.task-tag{display:inline-flex;align-items:center;gap:8px;padding:6px 12px;background:var(--cream);border-radius:999px;font-size:11px;font-weight:600;color:var(--ink-soft);align-self:flex-start;margin-bottom:18px;letter-spacing:.03em;}
+.task-tag .tag-dot{width:6px;height:6px;border-radius:50%;background:var(--lego-red);}
+.task-title{font-family:'DM Serif Display',serif;font-size:34px;line-height:1.15;color:var(--ink);margin-bottom:8px;}
+.task-now{font-size:13px;color:var(--ink-soft);margin-bottom:26px;}
+
+/* big color counter */
+.big-count{display:flex;align-items:baseline;gap:12px;margin-bottom:8px;}
+.big-count .swatch-sm{width:26px;height:26px;border-radius:7px;align-self:center;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18),0 2px 4px rgba(0,0,0,.12);}
+.big-count .bc-num{font-family:'DM Serif Display',serif;font-size:48px;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums;}
+.big-count .bc-of{font-size:18px;color:var(--ink-faint);}
+.big-count .bc-lbl{font-size:13px;color:var(--ink-soft);margin-left:4px;}
+.progress-row{display:flex;align-items:center;gap:12px;margin:18px 0 30px;}
+.prog-bar{flex:1;height:6px;background:var(--cream-deep);border-radius:999px;overflow:hidden;}
+.prog-fill{width:67%;height:100%;background:linear-gradient(90deg,var(--lego-red),#E8B62E);border-radius:999px;}
+.prog-num{font-size:12px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;}
+.keep-note{background:var(--cream);border-radius:14px;padding:16px;display:flex;align-items:center;gap:12px;margin-bottom:auto;}
+.keep-note .kn-swatches{display:flex;gap:5px;}
+.keep-note .kn-sw{width:18px;height:18px;border-radius:5px;box-shadow:inset 0 -2px 0 rgba(0,0,0,.18);}
+.keep-note .kn-txt{font-size:12px;color:var(--ink-soft);line-height:1.4;}
+.keep-note .kn-txt strong{color:var(--ink);font-weight:600;}
+.now-doing{margin-top:20px;padding:16px;background:var(--ink);border-radius:12px;display:flex;align-items:center;gap:12px;}
+.now-doing .robot{width:32px;height:32px;border-radius:8px;background:rgba(255,255,255,.12);display:flex;align-items:center;justify-content:center;color:var(--mustard);font-size:14px;flex-shrink:0;}
+.now-doing .lbl{font-size:11px;color:rgba(255,255,255,.5);letter-spacing:.03em;text-transform:uppercase;font-weight:600;}
+.now-doing .what{font-size:13px;color:#fff;font-weight:500;margin-top:1px;}
+.click-hint{position:absolute;bottom:20px;right:20px;font-size:10px;color:var(--ink-soft);background:rgba(255,255,255,.9);padding:6px 12px;border-radius:999px;letter-spacing:.04em;border:1px dashed rgba(31,27,22,.18);z-index:20;pointer-events:none;display:flex;align-items:center;gap:6px;}
+
+/* COMPLETION */
+#state-done{background:var(--cream);padding:72px 70px 40px;flex-direction:column;align-items:stretch;}
+.done-eyebrow{font-size:11px;font-weight:700;color:#4FAE5C;letter-spacing:.18em;text-transform:uppercase;margin-bottom:8px;display:flex;align-items:center;gap:8px;}
+.done-title{font-family:'DM Serif Display',serif;font-size:54px;color:var(--ink);letter-spacing:-.02em;line-height:1;margin-bottom:8px;}
+.done-sub{font-size:14px;color:var(--ink-soft);margin-bottom:28px;}
+.done-main{display:grid;grid-template-columns:1.1fr 1fr;gap:20px;margin-bottom:24px;}
+.bin-card{background:var(--paper);border-radius:20px;padding:26px 30px;box-shadow:var(--shadow);position:relative;}
+.bin-card .bc-head{display:flex;align-items:center;gap:12px;margin-bottom:20px;}
+.bin-card .bc-sw{width:30px;height:30px;border-radius:8px;box-shadow:inset 0 -3px 0 rgba(0,0,0,.18);}
+.bin-card .bc-title{font-size:16px;font-weight:700;color:var(--ink);}
+.bin-tray{display:grid;grid-template-columns:repeat(4,1fr);gap:12px 10px;background:var(--cream);border-radius:14px;padding:18px 16px;}
+.bin-tray .lego{width:100%;height:32px;}
+.next-card{background:var(--ink);color:#fff;border-radius:20px;padding:26px 30px;display:flex;flex-direction:column;}
+.next-card .nc-title{font-size:13px;font-weight:600;color:rgba(255,255,255,.6);letter-spacing:.04em;margin-bottom:6px;}
+.next-card .nc-big{font-family:'DM Serif Display',serif;font-size:24px;line-height:1.2;margin-bottom:18px;}
+.next-colors{display:flex;gap:10px;margin-bottom:20px;}
+.next-colors .nc-sw{width:40px;height:40px;border-radius:10px;box-shadow:inset 0 -4px 0 rgba(0,0,0,.22);cursor:pointer;transition:transform .15s;position:relative;}
+.next-colors .nc-sw:hover{transform:translateY(-2px) scale(1.05);}
+.next-colors .nc-sw .cnt{position:absolute;bottom:-18px;left:50%;transform:translateX(-50%);font-size:10px;color:rgba(255,255,255,.55);}
+.next-card .nc-hint{margin-top:auto;font-size:12px;color:rgba(255,255,255,.45);}
+.done-stats{display:flex;gap:40px;margin-bottom:24px;padding:0 4px;}
+.dstat .dval{font-family:'DM Serif Display',serif;font-size:30px;color:var(--ink);line-height:1;font-variant-numeric:tabular-nums;}
+.dstat .dlbl{font-size:11px;color:var(--ink-faint);font-weight:600;letter-spacing:.04em;margin-top:6px;}
+.done-cta{display:flex;gap:12px;margin-top:auto;}
+.btn{padding:14px 24px;border-radius:999px;font-size:13px;font-weight:600;letter-spacing:.02em;border:none;cursor:pointer;font-family:inherit;display:inline-flex;align-items:center;gap:8px;transition:transform .15s;}
+.btn:hover{transform:translateY(-1px);}
+.btn-primary{background:var(--ink);color:white;flex:1;justify-content:center;}
+.btn-secondary{background:var(--paper);color:var(--ink);border:1px solid rgba(31,27,22,.1);}
+
+.footer-label{color:rgba(255,255,255,.45);font-size:11px;letter-spacing:.04em;display:flex;align-items:center;gap:8px;}
+.footer-label kbd{background:rgba(255,255,255,.1);color:rgba(255,255,255,.7);padding:2px 8px;border-radius:4px;font-size:10px;font-family:inherit;border:1px solid rgba(255,255,255,.1);}
+</style>
+</head>
+<body>
+
+<div class="scene-switcher">
+  <a href="study_tidy.html">书房 · 整理书桌</a>
+  <a href="dining_table.html">餐厅 · 餐具摆台</a>
+  <a href="kitchen_trash.html">厨房 · 垃圾分类</a>
+  <a href="toy_sorting.html">儿童房 · 玩具收纳</a>
+  <a class="active" href="lego_sorting.html">儿童房 · 乐高分拣</a>
+</div>
+
+<div class="ipad">
+  <div class="screen">
+
+    <!-- ENTRY -->
+    <div class="state active" id="state-entry">
+      <div class="topbar on-photo" style="right:auto;width:56%;">
+        <div class="brand"><img class="logo" src="assets/sudo-logo.png" alt="sudo"><span class="sep">·</span><span class="scene">儿童房</span></div>
+      </div>
+      <div class="topbar" style="left:auto;width:44%;"><div></div><div class="statuspill"><span class="ready"></span> 机器人就绪</div></div>
+
+      <div class="scene-side desk">
+        <div class="counted"><span>📷</span> 桌面识别到 <span class="num">36</span> 块乐高 · 4 种颜色</div>
+        <div class="desk-toys">
+          <img class="dt" src="assets/Legos_Pile_w_Shadow.png" style="left:42%;top:80%;width:250px;">
+          <div class="brick" style="left:18%;top:69%;--rot:-8deg;"><span class="lego" style="--c:var(--lego-red);width:62px;height:38px;"><i></i><i></i></span></div>
+          <div class="brick" style="left:73%;top:67%;--rot:10deg;"><span class="lego" style="--c:var(--lego-blue);width:64px;height:40px;"><i></i><i></i></span></div>
+          <div class="brick" style="left:71%;top:87%;--rot:6deg;"><span class="lego" style="--c:var(--lego-yellow);width:58px;height:36px;"><i></i><i></i></span></div>
+          <div class="brick" style="left:22%;top:89%;--rot:-5deg;"><span class="lego" style="--c:var(--lego-green);width:58px;height:36px;"><i></i><i></i></span></div>
+        </div>
+      </div>
+
+      <div class="panel-side">
+        <div class="eyebrow">儿童房 · 任务 02</div>
+        <h1 class="hero-title">想先收<br/>哪个颜色？</h1>
+        <p class="hero-sub">选一个颜色，机器人会把这个颜色的乐高都挑出来，放进对应的盒子。</p>
+
+        <div class="color-grid">
+          <div class="color-opt" data-mode="watching">
+            <div class="swatch" style="background:var(--lego-red);"></div>
+            <div><div class="co-name">红色</div><div class="co-count">约 12 块</div></div>
+          </div>
+          <div class="color-opt" data-mode="watching">
+            <div class="swatch" style="background:var(--lego-yellow);"></div>
+            <div><div class="co-name">黄色</div><div class="co-count">约 9 块</div></div>
+          </div>
+          <div class="color-opt" data-mode="watching">
+            <div class="swatch" style="background:var(--lego-blue);"></div>
+            <div><div class="co-name">蓝色</div><div class="co-count">约 8 块</div></div>
+          </div>
+          <div class="color-opt" data-mode="watching">
+            <div class="swatch" style="background:var(--lego-green);"></div>
+            <div><div class="co-name">绿色</div><div class="co-count">约 7 块</div></div>
+          </div>
+        </div>
+
+        <div class="opt featured" data-mode="watching" style="margin-bottom:0;">
+          <div class="opt-icon">✨</div>
+          <div><div class="opt-name">全部分类</div><div class="opt-desc">红黄蓝绿，各归各盒</div></div>
+          <div class="arrow"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></div>
+        </div>
+
+        <div class="capability-note">
+          <div class="cap-badge">🎯</div>
+          <div class="cap-text"><strong>精准颜色识别</strong><span>从一堆混色里挑出指定颜色，连相近色也分得清</span></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- WATCHING -->
+    <div class="state" id="state-watching">
+      <div class="topbar on-photo" style="right:auto;width:58%;">
+        <div class="brand"><img class="logo" src="assets/sudo-logo.png" alt="sudo"><span class="sep">·</span><span class="scene">儿童房 · 挑出红色</span></div>
+      </div>
+      <div class="topbar" style="left:auto;width:42%;"><div></div><div class="statuspill"><span class="ready"></span> 执行中</div></div>
+
+      <div class="cam-side desk" data-next="done">
+        <div class="viewfinder"><span></span><span></span></div>
+        <div class="desk-toys">
+          <img class="dt" src="assets/Legos_Pile_w_Shadow.png" style="left:42%;top:80%;width:250px;">
+          <div class="brick faded" style="left:73%;top:67%;--rot:10deg;"><span class="lego" style="--c:var(--lego-blue);width:64px;height:40px;"><i></i><i></i></span></div>
+          <div class="brick faded" style="left:71%;top:87%;--rot:6deg;"><span class="lego" style="--c:var(--lego-yellow);width:58px;height:36px;"><i></i><i></i></span></div>
+          <div class="brick faded" style="left:22%;top:89%;--rot:-5deg;"><span class="lego" style="--c:var(--lego-green);width:58px;height:36px;"><i></i><i></i></span></div>
+          <div class="brick" style="left:20%;top:68%;--rot:-8deg;"><span class="lego" style="--c:var(--lego-red);width:64px;height:40px;"><i></i><i></i></span></div>
+          <div class="detect" style="left:20%;top:67%;width:84px;height:64px;">
+            <div class="detect-label">🔴 红色 2x4 · 0.98</div>
+          </div>
+          <!-- collecting bin -->
+          <div class="deskbin" style="left:84%;top:50%;">
+            <div class="bin-tag">红色盒 · 8</div>
+            <span class="lego" style="--c:var(--lego-red);width:44px;height:28px;"><i></i><i></i></span>
+            <span class="lego" style="--c:var(--lego-red);width:44px;height:28px;"><i></i><i></i></span>
+            <span class="lego" style="--c:var(--lego-red);width:44px;height:28px;margin-top:14px;"><i></i><i></i></span>
+          </div>
+        </div>
+        <div class="click-hint">▷ 点击屏幕模拟"机器人完成"</div>
+      </div>
+
+      <div class="plan-side">
+        <span class="task-tag"><span class="tag-dot"></span> 按颜色挑拣 · 红色</span>
+        <h2 class="task-title">机器人在挑红色</h2>
+        <p class="task-now">从 36 块里精准挑出红色</p>
+
+        <div class="big-count">
+          <div class="swatch-sm" style="background:var(--lego-red);"></div>
+          <span class="bc-num">8</span><span class="bc-of">/ 12</span>
+          <span class="bc-lbl">块红色已入盒</span>
+        </div>
+        <div class="progress-row">
+          <div class="prog-bar"><div class="prog-fill"></div></div>
+          <div class="prog-num">67%</div>
+        </div>
+
+        <div class="keep-note">
+          <div class="kn-swatches">
+            <div class="kn-sw" style="background:var(--lego-yellow);"></div>
+            <div class="kn-sw" style="background:var(--lego-blue);"></div>
+            <div class="kn-sw" style="background:var(--lego-green);"></div>
+          </div>
+          <div class="kn-txt"><strong>其它颜色留在桌上</strong> —— 收完红色，可以接着选下一个颜色。</div>
+        </div>
+
+        <div class="now-doing">
+          <div class="robot">◉</div>
+          <div><div class="lbl">正在执行</div><div class="what">抓取红色 2x4 → 红色盒</div></div>
+        </div>
+      </div>
+    </div>
+
+    <!-- COMPLETION -->
+    <div class="state" id="state-done">
+      <div class="topbar">
+        <div class="brand"><img class="logo" src="assets/sudo-logo.png" alt="sudo"><span class="sep">·</span><span class="scene">儿童房 · 红色收好</span></div>
+        <div class="statuspill"><span class="ready"></span> 完成</div>
+      </div>
+
+      <div style="margin-top:24px;">
+        <div class="done-eyebrow"><span>✓</span> 分拣完成</div>
+        <h1 class="done-title">红色都收好了</h1>
+        <p class="done-sub">12 块红色乐高，一块不落地放进了红色盒。</p>
+      </div>
+
+      <div class="done-main">
+        <div class="bin-card">
+          <div class="bc-head">
+            <div class="bc-sw" style="background:var(--lego-red);"></div>
+            <div class="bc-title">红色盒 · 12 块</div>
+          </div>
+          <div class="bin-tray">
+            <span class="lego" style="--c:var(--lego-red);"><i></i><i></i></span>
+            <span class="lego" style="--c:var(--lego-red);"><i></i><i></i></span>
+            <span class="lego" style="--c:var(--lego-red);"><i></i><i></i></span>
+            <span class="lego" style="--c:var(--lego-red);"><i></i><i></i></span>
+            <span class="lego" style="--c:var(--lego-red);"><i></i><i></i></span>
+            <span class="lego" style="--c:var(--lego-red);"><i></i><i></i></span>
+            <span class="lego" style="--c:var(--lego-red);"><i></i><i></i></span>
+            <span class="lego" style="--c:var(--lego-red);"><i></i><i></i></span>
+            <span class="lego" style="--c:var(--lego-red);"><i></i><i></i></span>
+            <span class="lego" style="--c:var(--lego-red);"><i></i><i></i></span>
+            <span class="lego" style="--c:var(--lego-red);"><i></i><i></i></span>
+            <span class="lego" style="--c:var(--lego-red);"><i></i><i></i></span>
+          </div>
+        </div>
+        <div class="next-card">
+          <div class="nc-title">桌上还剩 24 块</div>
+          <div class="nc-big">接着收<br/>下一个颜色？</div>
+          <div class="next-colors">
+            <div class="nc-sw" data-mode="watching" style="background:var(--lego-yellow);"><span class="cnt">9</span></div>
+            <div class="nc-sw" data-mode="watching" style="background:var(--lego-blue);"><span class="cnt">8</span></div>
+            <div class="nc-sw" data-mode="watching" style="background:var(--lego-green);"><span class="cnt">7</span></div>
+          </div>
+          <div class="nc-hint">选一个颜色继续 · 桌面无需重置</div>
+        </div>
+      </div>
+
+      <div class="done-stats">
+        <div class="dstat"><div class="dval">12</div><div class="dlbl">块红色入盒</div></div>
+        <div class="dstat"><div class="dval">23<span style="font-size:16px;">秒</span></div><div class="dlbl">用时</div></div>
+        <div class="dstat"><div class="dval">100%</div><div class="dlbl">颜色准确率</div></div>
+      </div>
+
+      <div class="done-cta">
+        <button class="btn btn-secondary" data-mode="entry">📷 拍照分享</button>
+        <button class="btn btn-primary" data-mode="entry">下一位 →</button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<div class="footer-label">
+  <span>WAIC 2026 · 乐高分拣原型 · 1180×820</span>
+  <span style="opacity:.4;">|</span>
+  <span>点击 <kbd>颜色</kbd> 看机器人挑拣 · 顶部切换场景</span>
+</div>
+
+<script>
+function goTo(id){document.querySelectorAll('.state').forEach(s=>s.classList.remove('active'));const t=document.getElementById('state-'+id);if(t)t.classList.add('active');}
+document.addEventListener('click',(e)=>{const m=e.target.closest('[data-mode]');if(m){goTo(m.dataset.mode);return;}const c=e.target.closest('[data-next]');if(c)goTo(c.dataset.next);});
+</script>
+</body>
+</html>

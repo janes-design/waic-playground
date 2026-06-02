@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>WAIC 2026 · 家庭场景 Demo · sudo</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=DM+Serif+Display&display=swap" rel="stylesheet">
+<style>
+:root{
+  --cream:#F8F3EA; --cream-deep:#EFE6D4; --paper:#FFFFFF;
+  --ink:#1F1B16; --ink-soft:#6F6557; --ink-faint:#ADA395;
+  --sudo-navy:#1E3A5F; --terracotta:#C76E4A;
+  --shadow:0 1px 2px rgba(31,27,22,.04),0 10px 30px rgba(31,27,22,.08);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-font-smoothing:antialiased;}
+body{font-family:'Plus Jakarta Sans','PingFang SC',-apple-system,sans-serif;background:var(--cream);color:var(--ink);min-height:100vh;padding:64px 32px 80px;}
+.wrap{max-width:1080px;margin:0 auto;}
+.head{display:flex;align-items:center;gap:14px;margin-bottom:40px;}
+.head img{height:30px;}
+.head .sep{color:var(--ink-faint);opacity:.5;font-size:20px;}
+.head .ctx{font-size:14px;color:var(--ink-soft);font-weight:500;}
+.hero{margin-bottom:14px;}
+.eyebrow{font-size:12px;font-weight:700;letter-spacing:.16em;text-transform:uppercase;color:var(--terracotta);margin-bottom:14px;}
+.title{font-family:'DM Serif Display',serif;font-size:52px;line-height:1.08;letter-spacing:-.02em;margin-bottom:14px;}
+.sub{font-size:16px;color:var(--ink-soft);line-height:1.6;max-width:620px;margin-bottom:48px;}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:20px;}
+.card{display:flex;flex-direction:column;background:var(--paper);border-radius:22px;overflow:hidden;text-decoration:none;color:inherit;box-shadow:var(--shadow);border:1px solid rgba(31,27,22,.05);transition:transform .2s,box-shadow .2s;}
+.card:hover{transform:translateY(-4px);box-shadow:0 4px 12px rgba(31,27,22,.06),0 24px 48px rgba(31,27,22,.14);}
+.cardtop{height:120px;display:flex;align-items:center;justify-content:center;font-size:46px;position:relative;}
+.cardtop .badge{position:absolute;top:14px;right:14px;background:rgba(255,255,255,.9);color:var(--terracotta);font-size:11px;font-weight:700;padding:5px 11px;border-radius:999px;letter-spacing:.02em;}
+.cardbody{padding:22px 24px 24px;display:flex;flex-direction:column;flex:1;}
+.room{font-size:11px;font-weight:700;letter-spacing:.12em;text-transform:uppercase;color:var(--ink-faint);margin-bottom:6px;}
+.name{font-size:20px;font-weight:700;letter-spacing:-.01em;margin-bottom:8px;}
+.cap{font-size:13px;color:var(--ink-soft);line-height:1.5;margin-bottom:18px;}
+.go{margin-top:auto;font-size:13px;font-weight:600;color:var(--ink);display:inline-flex;align-items:center;gap:6px;}
+.foot{margin-top:48px;font-size:12px;color:var(--ink-faint);line-height:1.7;}
+.foot strong{color:var(--ink-soft);}
+@media(max-width:560px){.title{font-size:38px;}body{padding:40px 20px 60px;}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="head">
+    <img src="assets/sudo-logo.png" alt="sudo">
+    <span class="sep">·</span>
+    <span class="ctx">WAIC 2026 自有展区 · 家庭场景交互原型</span>
+  </div>
+
+  <div class="hero">
+    <div class="eyebrow">Interactive Prototypes</div>
+    <h1 class="title">家庭场景 Demo</h1>
+    <p class="sub">围绕机器人「pick &amp; place」核心能力，三个空间、五个任务。用户在 iPad 上选择意图，机器人按规则完成——部分任务还能与机器人比一比。点击任意场景查看可交互原型。</p>
+  </div>
+
+  <div class="grid">
+    <a class="card" href="study_tidy.html">
+      <div class="cardtop" style="background:linear-gradient(135deg,#EAD9BD,#D4B997);">📚</div>
+      <div class="cardbody">
+        <div class="room">书房</div>
+        <div class="name">整理书桌</div>
+        <div class="cap">把文件、书本收回书架，标签统一朝外 — 展示<strong style="color:var(--ink)">朝向控制</strong>。</div>
+        <span class="go">查看原型 →</span>
+      </div>
+    </a>
+
+    <a class="card" href="dining_table.html">
+      <div class="cardtop" style="background:linear-gradient(135deg,#E7E0D2,#CFC3AB);">🍽️</div>
+      <div class="cardbody">
+        <div class="room">餐厅</div>
+        <div class="name">餐具摆台</div>
+        <div class="cap">选场合（中/西餐）与人数，按规范摆放，多位<strong style="color:var(--ink)">对称一致</strong>。</div>
+        <span class="go">查看原型 →</span>
+      </div>
+    </a>
+
+    <a class="card" href="kitchen_trash.html">
+      <div class="cardtop" style="background:linear-gradient(135deg,#C9D2E0,#9FB0C8);">♻️<span class="badge">🥊 可挑战</span></div>
+      <div class="cardbody">
+        <div class="room">厨房</div>
+        <div class="name">垃圾分类</div>
+        <div class="cap">可回收 / 不可回收 / 有害垃圾，<strong style="color:var(--ink)">规则推理 + 分拣</strong>，可与机器人 PK。</div>
+        <span class="go">查看原型 →</span>
+      </div>
+    </a>
+
+    <a class="card" href="toy_sorting.html">
+      <div class="cardtop" style="background:linear-gradient(135deg,#E5C9C6,#D8A7A2);">🧸<span class="badge">🥊 可挑战</span></div>
+      <div class="cardbody">
+        <div class="room">儿童房</div>
+        <div class="name">玩具收纳</div>
+        <div class="cap">按类别把玩具分到对应盒子，<strong style="color:var(--ink)">类别分拣</strong>，可与机器人 PK。</div>
+        <span class="go">查看原型 →</span>
+      </div>
+    </a>
+
+    <a class="card" href="lego_sorting.html">
+      <div class="cardtop" style="background:linear-gradient(135deg,#D7E0C9,#B6CBA8);">🧱</div>
+      <div class="cardbody">
+        <div class="room">儿童房</div>
+        <div class="name">乐高分拣</div>
+        <div class="cap">选颜色，机器人挑出该色乐高入盒，<strong style="color:var(--ink)">颜色分拣</strong> · 桌面自重置。</div>
+        <span class="go">查看原型 →</span>
+      </div>
+    </a>
+  </div>
+
+  <div class="foot">
+    <strong>说明</strong> · 原型按 iPad 横屏（1180×820）设计，建议在桌面浏览器查看。每个场景顶部可切换到其它场景。<br>
+    sudo · Anthropic Robot — WAIC 2026 Demo Planning
+  </div>
+</div>
+</body>
+</html>
